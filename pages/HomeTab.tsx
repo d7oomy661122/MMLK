@@ -40,7 +40,7 @@ const HomeTab = ({ user, setActiveTab }: { user: any, setActiveTab?: (tab: strin
       event: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Travel%20and%20places/Fire.png",
       
       // Daily Box: Updated to a transparent PNG gift box matching the style
-      gift: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Objects/Wrapped%20Gift.png",
+      gift: "https://i.ibb.co/zhZXrpkb/Pngtree-cartoon-yellow-gift-box-download-4448703.png",
       
       // Challenge: Trophy
       challenge: "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/master/Emojis/Activities/Trophy.png"
@@ -230,33 +230,29 @@ const HomeTab = ({ user, setActiveTab }: { user: any, setActiveTab?: (tab: strin
        {/* 
           =============================================
           SECURE WELCOME DIALOG (POPUP)
-          - Cannot be closed via ESC or Overlay Click
-          - Professional Design
+          - Updated Design: No Glow, Clean Dark Theme, Specific Icon
           =============================================
        */}
        {isWelcomeOpen && (
          <div 
-            className="fixed inset-0 z-[9999] flex items-center justify-center px-5 bg-black/95 backdrop-blur-md animate-fade-in touch-none"
+            className="fixed inset-0 z-[9999] flex items-center justify-center px-5 bg-black/95 backdrop-blur-sm animate-fade-in touch-none"
             role="dialog"
             aria-modal="true"
          >
-            {/* Ambient Background Glow for Modal */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#FFCC33]/10 rounded-full blur-[80px] pointer-events-none"></div>
-
-            <div className="w-full max-w-sm bg-[#141414] border border-[#FFCC33]/30 rounded-[2rem] p-6 shadow-[0_0_50px_rgba(255,204,51,0.15)] relative overflow-hidden animate-slide-up transform transition-all">
-                
-                {/* Decoration Lines */}
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FFCC33] to-transparent opacity-50"></div>
+            <div className="w-full max-w-sm bg-[#121214] border border-[#27272A] rounded-3xl p-6 relative overflow-hidden animate-slide-up shadow-2xl">
                 
                 <div className="flex flex-col items-center text-center relative z-10">
-                    {/* Icon Container */}
-                    <div className="w-20 h-20 bg-[#1C1C1C] rounded-[1.5rem] flex items-center justify-center mb-6 border border-[#2A2A2A] shadow-lg relative group">
-                        <div className="absolute inset-0 bg-[#FFCC33]/20 rounded-[1.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-                        <Send className="w-10 h-10 text-[#FFCC33] ml-1 relative z-10 drop-shadow-md" />
+                    {/* Icon Image */}
+                    <div className="mb-6 relative">
+                        <img 
+                            src="https://i.ibb.co/zhZXrpkb/Pngtree-cartoon-yellow-gift-box-download-4448703.png" 
+                            alt="Gift Box" 
+                            className="w-28 h-28 object-contain drop-shadow-md" 
+                        />
                     </div>
 
                     {/* Content */}
-                    <h2 className="text-2xl font-extrabold text-white mb-3 tracking-tight">مرحباً بك في منصتنا!</h2>
+                    <h2 className="text-xl font-bold text-white mb-3 tracking-tight">مرحباً بك في منصتنا!</h2>
                     <p className="text-gray-400 text-sm leading-relaxed mb-8 max-w-[260px]">
                         انضم إلى القناة الرسمية للبقاء على اطلاع بكل جديد، وتلقي التحديثات والهدايا الحصرية.
                     </p>
@@ -265,7 +261,7 @@ const HomeTab = ({ user, setActiveTab }: { user: any, setActiveTab?: (tab: strin
                     <div className="flex items-center gap-3 w-full">
                         <button 
                             onClick={() => setIsWelcomeOpen(false)}
-                            className="flex-1 bg-[#1A1A1A] text-gray-500 font-bold py-3.5 rounded-2xl border border-[#2A2A2A] hover:text-white hover:border-[#333] hover:bg-[#222] transition-all active:scale-95"
+                            className="flex-1 bg-[#1A1A1A] text-gray-400 font-bold py-3.5 rounded-xl border border-[#2A2A2A] hover:text-white hover:bg-[#222] hover:border-[#333] transition-all active:scale-95"
                         >
                             إلغاء
                         </button>
@@ -273,7 +269,7 @@ const HomeTab = ({ user, setActiveTab }: { user: any, setActiveTab?: (tab: strin
                             href="https://t.me/brixaofficial" 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex-[1.5] bg-[#FFCC33] text-[#000000] font-extrabold py-3.5 rounded-2xl flex items-center justify-center gap-2 hover:bg-[#ffdb66] transition-all shadow-[0_4px_20px_rgba(255,204,51,0.25)] hover:shadow-[0_6px_25px_rgba(255,204,51,0.35)] active:scale-95 transform"
+                            className="flex-[1.5] bg-primary text-black font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 hover:bg-primary-hover transition-all active:scale-95"
                         >
                             انضم الآن <Send className="w-4 h-4 ml-1" />
                         </a>
