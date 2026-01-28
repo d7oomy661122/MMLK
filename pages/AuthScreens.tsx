@@ -32,7 +32,14 @@ const AmbientBackground = memo(() => (
 
 const AuthScreens = () => {
   // --- State Management ---
-  const [view, setView] = useState<'login' | 'register'>('register');
+  // Initialize view based on current URL
+  const [view, setView] = useState<'login' | 'register'>(() => {
+     if (typeof window !== 'undefined') {
+         return window.location.pathname === '/login' ? 'login' : 'register';
+     }
+     return 'register';
+  });
+
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -44,13 +51,42 @@ const AuthScreens = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Effects ---
+  // --- Routing & Effects ---
+  
+  // Handle Browser Back/Forward & Initial URL normalization
+  useEffect(() => {
+    const handlePopState = () => {
+        const path = window.location.pathname;
+        if (path === '/login') {
+            setView('login');
+            setError(null);
+        } else if (path === '/register') {
+            setView('register');
+            setError(null);
+        }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    // If root path, default to register in URL without reload
+    if (window.location.pathname === '/' || window.location.pathname === '') {
+        window.history.replaceState({}, '', '/register');
+    }
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Handle Referral Params & URL sync
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const refParam = params.get('ref');
     if (refParam) {
       setReferralCode(refParam);
-      if (view === 'login') setView('register');
+      // If we are forcing registration due to referral, ensure URL matches
+      if (view === 'login' || window.location.pathname !== '/register') {
+          setView('register');
+          window.history.replaceState({}, '', '/register' + window.location.search);
+      }
     }
   }, []);
 
@@ -63,6 +99,15 @@ const AuthScreens = () => {
   useEffect(() => {
     if (view === 'register') generateCaptcha();
   }, [view, generateCaptcha]);
+
+  // --- View Switcher Logic ---
+  const switchView = (target: 'login' | 'register') => {
+      setView(target);
+      setError(null);
+      generateCaptcha();
+      // Push state to browser history without reloading
+      window.history.pushState({}, '', target === 'login' ? '/login' : '/register');
+  };
 
   // --- Helpers ---
   const isValidPhone = (p: string) => /^(0?)(6|7)\d{8}$/.test(p);
@@ -347,7 +392,7 @@ const AuthScreens = () => {
           {/* Footer Switcher */}
           <div className="mt-8 pt-6 border-t border-[#222] text-center select-none">
             <button 
-               onClick={() => { setView(view === 'login' ? 'register' : 'login'); setError(null); generateCaptcha(); }} 
+               onClick={() => switchView(view === 'login' ? 'register' : 'login')} 
                className="text-gray-500 text-sm hover:text-white transition-colors group p-2 font-medium"
             >
               {view === 'register' ? 'لديك حساب بالفعل؟ ' : 'جديد في المنصة؟ '}
