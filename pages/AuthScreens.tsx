@@ -35,7 +35,10 @@ const AuthScreens = () => {
   // Initialize view based on current URL
   const [view, setView] = useState<'login' | 'register'>(() => {
      if (typeof window !== 'undefined') {
-         return window.location.pathname === '/login' ? 'login' : 'register';
+         const path = window.location.pathname;
+         // Default to login if on login path or if on dashboard (e.g. after logout)
+         if (path === '/login' || path === '/dashboard') return 'login';
+         return 'register';
      }
      return 'register';
   });
@@ -68,9 +71,16 @@ const AuthScreens = () => {
 
     window.addEventListener('popstate', handlePopState);
 
+    const path = window.location.pathname;
     // If root path, default to register in URL without reload
-    if (window.location.pathname === '/' || window.location.pathname === '') {
+    if (path === '/' || path === '') {
         window.history.replaceState({}, '', '/register');
+        setView('register');
+    } 
+    // If user lands on dashboard without auth, redirect to login
+    else if (path === '/dashboard') {
+        window.history.replaceState({}, '', '/login');
+        setView('login');
     }
 
     return () => window.removeEventListener('popstate', handlePopState);
