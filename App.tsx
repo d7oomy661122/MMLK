@@ -71,6 +71,16 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Routing: Clean URL when authenticated
+  useEffect(() => {
+    if (session) {
+        const path = window.location.pathname;
+        if (path === '/login' || path === '/register') {
+            window.history.replaceState({}, '', '/');
+        }
+    }
+  }, [session]);
+
   const fetchUserProfile = async (userId: string, attempt = 0) => {
     if (!navigator.onLine) {
         setError(true);
