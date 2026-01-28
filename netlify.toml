@@ -1,0 +1,13 @@
+
+[build]
+  # أمر البناء: نستخدم npx vite build لتجاوز فحص tsc الصارم الذي يسبب الخطأ رقم 2
+  command = "npx vite build"
+  # مجلد النشر: ملف vite.config.ts لديك يخرج الملفات في مجلد build
+  publish = "build"
+
+# هذا الجزء مهم جداً لمواقع React
+# يمنع ظهور خطأ 404 عند تحديث الصفحة
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

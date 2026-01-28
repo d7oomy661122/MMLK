@@ -1,0 +1,38 @@
+
+/* 3D Hardware Acceleration & Perspective */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Container moving in 3D space */
+.transform-style-3d {
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  position: relative;
+  transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Shared Face Styles to ensure perfect stacking */
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Rotation Classes */
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* 
+   CRITICAL FIX: 
+   Push text slightly forward in Z-space to prevent it from 
+   being clipped by the card background during rotation.
+*/
+.translate-z-10 {
+  transform: translateZ(10px);
+}
