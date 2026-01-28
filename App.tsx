@@ -71,12 +71,12 @@ const App = () => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Routing: Clean URL when authenticated
+  // Routing: Clean URL when authenticated to /dashboard
   useEffect(() => {
     if (session) {
         const path = window.location.pathname;
-        if (path === '/login' || path === '/register') {
-            window.history.replaceState({}, '', '/');
+        if (path === '/login' || path === '/register' || path === '/') {
+            window.history.replaceState({}, '', '/dashboard');
         }
     }
   }, [session]);
