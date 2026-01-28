@@ -18,7 +18,7 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
   // Helpers
   const userVipLevel = user?.vip_level || 0;
 
-  // Intern Expiry Logic (Client-side visual check)
+  // Intern Expiry Logic (Client-side visual check only for messaging)
   const isInternExpired = useMemo(() => {
       if (!user) return false;
       if (userVipLevel > 0) return false; 
@@ -36,26 +36,17 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
         if (!user) return;
         setLoading(true);
         try {
-            // Fetch all available tasks via RPC
+            // Fetch tasks using the strict RPC function
+            // This function now handles the "4-day intern rule" and "Exact VIP level" logic on the server
             const { data, error } = await supabase.rpc('get_available_tasks', { 
                 p_user_id: user.id 
             });
             
             if (error) throw error;
             
-            // STRICT CLIENT FILTERING: 
-            // Show ONLY tasks that match the user's current exact level.
-            const relevantTasks = (data || []).filter((t: Task) => {
-                const taskLevel = t.vip_level || 0;
-                // If user is VIP > 0, show only their level tasks
-                if (userVipLevel > 0) {
-                    return taskLevel === userVipLevel;
-                }
-                // If user is Intern (0), show Intern tasks
-                return taskLevel === 0;
-            });
-
-            setTasks(relevantTasks);
+            // We use the data directly as the DB strictly filters it now
+            setTasks(data || []);
+            
         } catch (e: any) {
             console.error("Fetch Tasks Error:", e);
         } finally {
@@ -64,7 +55,7 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
     };
 
     fetchTasks();
-  }, [user?.id, user?.vip_level, userVipLevel]);
+  }, [user?.id, user?.vip_level]); // Refetch when VIP level changes
 
   // Timer Logic
   useEffect(() => {
@@ -82,13 +73,7 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
   const handleStartTask = async (task: Task) => {
     if (!user) return;
     
-    // 1. UI Check: Intern Expired?
-    if (userVipLevel === 0 && isInternExpired) {
-        showToast("انتهت الفترة التجريبية (Intern). يرجى الترقية للمتابعة.", 'error');
-        return;
-    }
-
-    // 2. UI Check: Completed?
+    // UI Check: Completed?
     if (task.is_completed_today) {
         showToast("لقد أتممت هذه المهمة اليوم بالفعل.", 'error');
         return;
@@ -96,7 +81,7 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
 
     setVerifying(task.id);
     try {
-        // 3. SECURE CHECK: Check Eligibility via RPC
+        // SECURE CHECK: Check Eligibility via RPC
         const { data, error } = await supabase.rpc('check_task_eligibility', {
             p_user_id: user.id,
             p_task_id: task.id
@@ -107,7 +92,7 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
         const result = data && data.length > 0 ? data[0] : null;
 
         if (result && result.allowed === false) {
-            // Humanize the error message
+            // Handle specific DB rejection reasons
             const msg = result.reason || "غير مسموح";
             if (msg.includes('24') || msg.includes('مؤخراً')) {
                  setTasks(prev => prev.map(t => t.id === task.id ? { ...t, is_completed_today: true } : t));
@@ -118,7 +103,7 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
             return;
         }
 
-        // 4. Start
+        // Start
         setActiveTask(task);
         setTimeLeft(task.duration_seconds || 30); 
         setShowWebView(true);
@@ -144,11 +129,15 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
       setClaiming(true);
 
       try {
-          const { error } = await supabase.rpc('complete_task_secure', {
+          const { data, error } = await supabase.rpc('complete_task_secure', {
               p_task_id: activeTask.id
           });
 
           if (error) throw error;
+
+          if (data && !data.success) {
+              throw new Error(data.message);
+          }
 
           showToast(`تمت إضافة ${(activeTask.reward || 0).toFixed(2)} MAD بنجاح`, 'success');
           
@@ -172,11 +161,9 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
     <>
     <div className="pb-32 animate-fade-in relative min-h-screen">
        
-       {/* Background Ambience */}
        <div className="fixed top-0 left-0 w-full h-full bg-[#050505] -z-20"></div>
        <div className="fixed top-0 right-0 w-[300px] h-[300px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
-       {/* Header: Clean & Minimal */}
        <div className="pt-10 px-6 mb-8 flex items-center gap-3">
           <div className="p-2.5 bg-[#141414] rounded-xl border border-[#2A2A2A] shadow-sm">
              <Trophy className="w-5 h-5 text-primary" />
@@ -187,7 +174,6 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
           </div>
        </div>
 
-       {/* Tasks List */}
        <div className="px-5 grid gap-3">
           {tasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -197,14 +183,13 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
                   <h3 className="text-white font-bold mb-1">لا توجد مهام متاحة</h3>
                   <p className="text-xs text-gray-500 max-w-[200px]">
                       {userVipLevel === 0 && isInternExpired 
-                        ? "انتهت فترة المهام المجانية. قم بالترقية للاستمرار."
+                        ? "انتهت فترة المهام المجانية. قم بالترقية لمتابعة الربح."
                         : "لقد أنهيت جميع المهام المتاحة لمستواك حالياً."}
                   </p>
               </div>
           ) : (
             tasks.map((t, idx) => {
                const isCompleted = t.is_completed_today;
-               const isLocked = userVipLevel === 0 && isInternExpired && !isCompleted;
                const isVerifyingThis = verifying === t.id;
 
                return (
@@ -214,27 +199,21 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
                     group relative rounded-2xl overflow-hidden transition-all duration-300 border
                     ${isCompleted 
                         ? 'bg-[#0f0f0f] border-[#1A1A1A] opacity-60' 
-                        : isLocked
-                            ? 'bg-[#0f0f0f] border-red-900/20'
-                            : 'bg-[#141414] border-[#222] hover:border-primary/30'
+                        : 'bg-[#141414] border-[#222] hover:border-primary/30'
                     }
                   `}
                   style={{ animationDelay: `${idx * 50}ms` }}
                >
                   <div className="p-4 flex items-center justify-between">
-                      
-                      {/* Left: Info */}
                       <div className="flex items-center gap-4 flex-1 min-w-0">
                           <div className={`
                               w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors
                               ${isCompleted 
                                 ? 'bg-[#181818] text-green-600' 
-                                : isLocked
-                                    ? 'bg-red-500/5 text-red-500'
-                                    : 'bg-[#1C1C1C] text-gray-300 group-hover:text-primary group-hover:bg-primary/10'
+                                : 'bg-[#1C1C1C] text-gray-300 group-hover:text-primary group-hover:bg-primary/10'
                               }
                           `}>
-                              {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : isLocked ? <Lock className="w-5 h-5" /> : <Zap className="w-5 h-5 fill-current" />}
+                              {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : <Zap className="w-5 h-5 fill-current" />}
                           </div>
                           
                           <div className="flex-1 min-w-0">
@@ -251,25 +230,22 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
                           </div>
                       </div>
 
-                      {/* Right: Action Button */}
                       <div className="mr-4">
                           <button 
                             onClick={() => handleStartTask(t)}
-                            disabled={!!isCompleted || !!isVerifyingThis || isLocked}
+                            disabled={!!isCompleted || !!isVerifyingThis}
                             className={`
                                 h-10 px-5 rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-2 min-w-[100px]
                                 ${isCompleted 
                                     ? 'bg-[#181818] text-gray-600 border border-[#222] cursor-default' 
-                                    : isLocked
-                                        ? 'bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20'
-                                        : 'bg-white text-black hover:bg-primary hover:border-primary border border-transparent shadow-lg shadow-white/5'
+                                    : 'bg-white text-black hover:bg-primary hover:border-primary border border-transparent shadow-lg shadow-white/5'
                                 }
                             `}
                           >
                              {isVerifyingThis ? <Loader2 className="w-4 h-4 animate-spin" /> : (
                                 <>
-                                    {isCompleted ? 'مكتملة' : isLocked ? 'منتهية' : 'بدء'}
-                                    {!isCompleted && !isLocked && <Play className="w-3 h-3 fill-current" />}
+                                    {isCompleted ? 'مكتملة' : 'بدء'}
+                                    {!isCompleted && <Play className="w-3 h-3 fill-current" />}
                                 </>
                              )}
                           </button>
@@ -281,11 +257,8 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
        </div>
     </div>
 
-    {/* WebView Overlay */}
     {showWebView && activeTask && (
         <div className="fixed inset-0 z-[100] bg-black flex flex-col animate-fade-in">
-            
-            {/* WebView Header with Tiny Circular Timer */}
             <div className="h-14 bg-[#141414]/90 backdrop-blur-md border-b border-[#222] flex items-center justify-between px-4 shrink-0 z-20 absolute top-0 left-0 right-0">
                 <button onClick={handleCloseWebView} className="w-8 h-8 flex items-center justify-center bg-[#222] rounded-full text-gray-400 hover:text-white transition-colors border border-[#333]">
                     <X className="w-4 h-4" />
@@ -321,7 +294,6 @@ const TasksTab = ({ user, showToast, refreshUser }: { user: User | null, showToa
                 </div>
             </div>
 
-            {/* Iframe Content - Full Height */}
             <div className="flex-1 bg-white relative w-full h-full pt-14">
                 <iframe 
                     src={activeTask.landing_url} 
